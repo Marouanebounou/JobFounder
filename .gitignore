@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+cv/
+data/jobs.json
+data/applied.json
+venv/
+.venv/
+*.log

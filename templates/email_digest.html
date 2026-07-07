@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f4f9; margin: 0; padding: 20px; }
+        .container { max-width: 700px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .header p { margin: 5px 0 0; opacity: 0.9; }
+        .stats { background: white; padding: 15px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: space-around; text-align: center; }
+        .stat-num { font-size: 28px; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 12px; color: #888; text-transform: uppercase; }
+        .jobs { background: white; padding: 20px 30px; border-radius: 0 0 12px 12px; }
+        .job { border-bottom: 1px solid #f0f0f0; padding: 18px 0; }
+        .job:last-child { border-bottom: none; }
+        .job-title { font-size: 16px; font-weight: 600; color: #333; margin: 0; }
+        .job-title a { color: #667eea; text-decoration: none; }
+        .job-title a:hover { text-decoration: underline; }
+        .job-meta { font-size: 13px; color: #666; margin: 5px 0; }
+        .job-meta span { margin-right: 15px; }
+        .score { display: inline-block; background: #667eea; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+        .score-high { background: #27ae60; }
+        .score-mid { background: #f39c12; }
+        .score-low { background: #95a5a6; }
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎯 JobFounder — Daily Digest</h1>
+        <p>{{ date }} — {{ total_jobs }} new opportunities found</p>
+    </div>
+    <div class="stats">
+        <div><div class="stat-num">{{ total_jobs }}</div><div class="stat-label">Jobs Found</div></div>
+        <div><div class="stat-num">{{ sources_count }}</div><div class="stat-label">Sources</div></div>
+        <div><div class="stat-num">{{ top_score }}%</div><div class="stat-label">Best Match</div></div>
+    </div>
+    <div class="jobs">
+        {% for job in jobs %}
+        <div class="job">
+            <p class="job-title">
+                <a href="{{ job.url }}" target="_blank">{{ job.title }}</a>
+                {% if job.match_score >= 60 %}
+                <span class="score score-high">{{ job.match_score }}% match</span>
+                {% elif job.match_score >= 35 %}
+                <span class="score score-mid">{{ job.match_score }}% match</span>
+                {% else %}
+                <span class="score score-low">{{ job.match_score }}% match</span>
+                {% endif %}
+            </p>
+            <p class="job-meta">
+                <span>🏢 {{ job.company }}</span>
+                <span>📍 {{ job.location }}</span>
+                <span>🌐 {{ job.source }}</span>
+                {% if job.date %}<span>📅 {{ job.date }}</span>{% endif %}
+            </p>
+            {% if job.description %}
+            <p style="font-size: 13px; color: #555; margin: 5px 0 0;">{{ job.description[:150] }}{% if job.description|length > 150 %}...{% endif %}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    <div class="footer">
+        JobFounder — Your personal job hunting agent 🤖<br>
+        Powered by Python • Built with ❤️ for Marouane
+    </div>
+</div>
+</body>
+</html>

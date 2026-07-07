@@ -1,0 +1,47 @@
+name: JobFounder Daily Hunt
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  hunt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create .env
+        run: |
+          cat <<EOF > .env
+          SENDER_EMAIL=${{ secrets.SENDER_EMAIL }}
+          SENDER_APP_PASSWORD=${{ secrets.SENDER_APP_PASSWORD }}
+          RECIPIENT_EMAIL=${{ secrets.RECIPIENT_EMAIL }}
+          SEARCH_LOCATION=Maroc
+          SEARCH_KEYWORDS=${{ secrets.SEARCH_KEYWORDS }}
+          MAX_JOBS_PER_SOURCE=30
+          MIN_MATCH_SCORE=15
+          ENABLE_REKRUTE=true
+          ENABLE_EMPLOIMA=true
+          ENABLE_INDEED=true
+          ENABLE_LINKEDIN=true
+          ENABLE_WELCOMEJUNGLE=true
+          AUTO_APPLY=false
+          CV_PATH=cv/cv.pdf
+          EOF
+
+      - name: Restore CV
+        run: |
+          mkdir -p cv
+          echo "${{ secrets.CV_BASE64 }}" | base64 -d > cv/cv.pdf
+
+      - name: Run job hunt
+        run: python main.py --once
