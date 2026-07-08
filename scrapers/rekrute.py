@@ -10,58 +10,57 @@ class RekruteScraper(BaseScraper):
 
     def scrape(self, keywords: list[str], location: str, max_results: int) -> list[dict]:
         jobs = []
-        query = " ".join(keywords) if keywords else ""
-        search_url = (
-            f"{self.base_url}/fr/offres.html?"
-            f"s=1&p=1&o=1"
-            f"&keyword={quote_plus(query)}"
-            f"&location={quote_plus(location)}"
-        )
+        per_kw = max(max_results // len(keywords[:3]), 5)
 
-        page = 1
-        while len(jobs) < max_results:
-            url = search_url + f"&page={page}"
-            soup = self.fetch_page(url)
-            if not soup:
-                break
-
-            listings = soup.select("li.post-id")
-            if not listings:
-                listings = soup.select("div.section-content ul li")
-
-            if not listings:
-                break
-
-            for item in listings:
+        for keyword in keywords[:3]:
+            url = (
+                f"{self.base_url}/offres.html?"
+                f"s=1&p=1&o=1&searchKeyWord={quote_plus(keyword)}"
+                f"&postType=0&empType=0"
+            )
+            for page in range(1, 4):
                 if len(jobs) >= max_results:
                     break
+                page_url = url + f"&page={page}"
+                soup = self.fetch_page(page_url, referer=self.base_url)
+                if not soup:
+                    break
 
-                title_el = item.select_one("a.titreJob, h2 a")
-                if not title_el:
-                    continue
+                items = (
+                    soup.select("li[class*='post-id']") or
+                    soup.select("li.highlight-target") or
+                    soup.select(".section-offres li") or
+                    soup.select("article.job-card") or
+                    soup.select("div.job-card") or
+                    soup.select(".offres li")
+                )
 
-                title = title_el.get_text(strip=True)
-                link = title_el.get("href", "")
-                if link and not link.startswith("http"):
-                    link = self.base_url + link
+                if not items:
+                    break
 
-                company_el = item.select_one("span.company, a.entreprise")
-                company = company_el.get_text(strip=True) if company_el else "N/A"
+                for item in items:
+                    if len(jobs) >= per_kw:
+                        break
 
-                loc_el = item.select_one("span.location, span.city")
-                loc = loc_el.get_text(strip=True) if loc_el else location
+                    link_el = item.select_one("h2 a, h3 a, a.titreJob, a[href*='offre']")
+                    if not link_el:
+                        continue
 
-                date_el = item.select_one("span.date, em.date")
-                date = date_el.get_text(strip=True) if date_el else ""
+                    title = link_el.get_text(strip=True)
+                    link = link_el.get("href", "")
+                    if link and not link.startswith("http"):
+                        link = self.base_url + link
 
-                desc_el = item.select_one("p, div.info")
-                desc = desc_el.get_text(strip=True) if desc_el else ""
+                    company_el = item.select_one("a.company, span.company, .recruiter a, a[href*='recruteur']")
+                    company = company_el.get_text(strip=True) if company_el else "N/A"
 
-                jobs.append(self.normalize_job(title, company, loc, link, desc, date))
+                    loc_el = item.select_one("span.location, span.city, span.ville, .loc")
+                    loc = loc_el.get_text(strip=True) if loc_el else location
 
-            page += 1
-            if page > 5:
-                break
+                    date_el = item.select_one("span.date, em.date, time")
+                    date = date_el.get_text(strip=True) if date_el else ""
+
+                    jobs.append(self.normalize_job(title, company, loc, link, "", date))
 
         print(f"[Rekrute] Found {len(jobs)} jobs")
-        return jobs
+        return jobs[:max_results]

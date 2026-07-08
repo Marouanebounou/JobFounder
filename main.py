@@ -51,8 +51,10 @@ def run_pipeline():
         print(f"  -> Place your CV at: {CV_PATH}")
         return
 
-    keywords = SEARCH_KEYWORDS if SEARCH_KEYWORDS else profile["skills"][:8]
-    print(f"  -> Searching for: {', '.join(keywords[:5])}...")
+    keywords = SEARCH_KEYWORDS if SEARCH_KEYWORDS else profile["skills"][:3]
+    if not keywords:
+        keywords = ["développeur", "stage", "ingénieur"]
+    print(f"  -> Searching for: {', '.join(keywords)}...")
 
     print("\n[2/4] Scraping job boards...")
     all_jobs = []

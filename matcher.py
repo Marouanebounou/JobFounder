@@ -13,6 +13,7 @@ def build_profile_text(profile: dict) -> str:
 def build_job_text(job: dict) -> str:
     parts = [
         job.get("title", ""),
+        job.get("title", ""),
         job.get("company", ""),
         job.get("description", ""),
         job.get("location", ""),
@@ -20,7 +21,16 @@ def build_job_text(job: dict) -> str:
     return " ".join(parts)
 
 
-def rank_jobs(jobs: list[dict], profile: dict, min_score: int = 15) -> list[dict]:
+def keyword_score(job: dict, profile: dict) -> int:
+    job_text = build_job_text(job).lower()
+    skills = profile.get("skills", [])
+    if not skills:
+        return 0
+    matches = sum(1 for skill in skills if skill.lower() in job_text)
+    return int((matches / max(len(skills), 1)) * 100)
+
+
+def rank_jobs(jobs: list[dict], profile: dict, min_score: int = 5) -> list[dict]:
     if not jobs:
         return []
 
@@ -41,15 +51,17 @@ def rank_jobs(jobs: list[dict], profile: dict, min_score: int = 15) -> list[dict
 
     scored_jobs = []
     for i, job in enumerate(jobs):
-        score = int(similarities[i] * 100)
-        if score >= min_score:
-            job["match_score"] = score
+        tfidf_score = similarities[i] * 100
+        kw_score = keyword_score(job, profile)
+        final_score = int(max(tfidf_score, kw_score, (tfidf_score + kw_score) / 2))
+        if final_score >= min_score:
+            job["match_score"] = final_score
             scored_jobs.append(job)
 
     scored_jobs.sort(key=lambda x: x["match_score"], reverse=True)
     return scored_jobs
 
 
-def get_top_jobs(jobs: list[dict], profile: dict, min_score: int = 15, top_n: int = 20) -> list[dict]:
+def get_top_jobs(jobs: list[dict], profile: dict, min_score: int = 5, top_n: int = 25) -> list[dict]:
     ranked = rank_jobs(jobs, profile, min_score)
     return ranked[:top_n]

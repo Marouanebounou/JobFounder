@@ -1,32 +1,25 @@
 import time
 import random
-import requests
+import cloudscraper
 from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
 
 
 class BaseScraper:
 
     def __init__(self, name: str):
         self.name = name
-        self.ua = UserAgent()
-        self.session = requests.Session()
-        self.jobs = []
+        self.session = cloudscraper.create_scraper(
+            browser={"browser": "chrome", "platform": "windows", "mobile": False}
+        )
 
-    def get_headers(self) -> dict:
-        return {
-            "User-Agent": self.ua.random,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
-        }
-
-    def fetch_page(self, url: str) -> BeautifulSoup | None:
+    def fetch_page(self, url: str, referer: str = "") -> BeautifulSoup | None:
         try:
-            time.sleep(random.uniform(1.5, 3.5))
-            response = self.session.get(url, headers=self.get_headers(), timeout=15)
+            time.sleep(random.uniform(2.0, 4.0))
+            headers = {"Referer": referer} if referer else {}
+            response = self.session.get(url, headers=headers, timeout=20)
             response.raise_for_status()
             return BeautifulSoup(response.text, "lxml")
-        except requests.RequestException as e:
+        except Exception as e:
             print(f"[{self.name}] Error fetching {url}: {e}")
             return None
 
